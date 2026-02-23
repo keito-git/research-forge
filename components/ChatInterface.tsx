@@ -1,7 +1,7 @@
 'use client';
 
 import { Bookmark, BookOpen, MessageSquarePlus, Settings, Sparkles } from 'lucide-react';
-import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -60,13 +60,7 @@ export default function ChatInterface({
     model,
     activeConversationId,
     setActiveConversationId,
-    onToolGenerated: useCallback(
-      (parsed: import('@/types').GeneratedTool) => {
-        preview.setToolFromGeneration(parsed);
-        preview.setToolSaved(false);
-      },
-      [preview.setToolFromGeneration, preview.setToolSaved],
-    ),
+    onToolGenerated: preview.setToolFromGeneration,
     setMobileView,
   });
 
@@ -82,14 +76,18 @@ export default function ChatInterface({
     setLastFailedInput: chatSession.setLastFailedInput,
   });
 
+  // Ref to break saveConversation -> conversations -> saveConversation dependency cycle
+  const saveConversationRef = useRef(conversations.saveConversation);
+  saveConversationRef.current = conversations.saveConversation;
+
   // Debounced save on message change
   useEffect(() => {
     if (!storageReady || chatSession.messages.length === 0 || !activeConversationId) return;
     const timeout = setTimeout(() => {
-      conversations.saveConversation(chatSession.messages);
+      saveConversationRef.current(chatSession.messages);
     }, 500);
     return () => clearTimeout(timeout);
-  }, [chatSession.messages, storageReady, activeConversationId, conversations.saveConversation]);
+  }, [chatSession.messages, storageReady, activeConversationId]);
 
   // Bridge: save + publish set toolSaved
   const handleSaveTool = useCallback(() => {
@@ -99,9 +97,10 @@ export default function ChatInterface({
   }, [savedTools.handleSaveTool, preview.setToolSaved]);
 
   const handlePublishTool = useCallback(() => {
+    if (!preview.tool) return;
     savedTools.handlePublishTool();
     preview.setToolSaved(true);
-  }, [savedTools.handlePublishTool, preview.setToolSaved]);
+  }, [savedTools.handlePublishTool, preview.setToolSaved, preview.tool]);
 
   const handleLoadTool = useCallback(
     (saved: SavedTool) => {
@@ -110,6 +109,14 @@ export default function ChatInterface({
       setMobileView('preview');
     },
     [preview.handleLoadTool],
+  );
+
+  const handleSwitchConversation = useCallback(
+    (conv: import('@/types').Conversation) => {
+      conversations.handleSwitchConversation(conv);
+      setSidePanel('chat');
+    },
+    [conversations.handleSwitchConversation],
   );
 
   const handleClearAndClose = useCallback(() => {
@@ -252,7 +259,7 @@ export default function ChatInterface({
               <ConversationHistory
                 conversations={conversations.conversations}
                 activeConversationId={activeConversationId}
-                onSwitch={conversations.handleSwitchConversation}
+                onSwitch={handleSwitchConversation}
                 onDelete={conversations.handleDeleteConversation}
               />
             </TabsContent>
