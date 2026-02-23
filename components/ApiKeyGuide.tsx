@@ -1,9 +1,9 @@
 'use client';
 
+import { Check, Copy, ExternalLink, Key, ShieldCheck } from 'lucide-react';
 import { useState } from 'react';
-import { ExternalLink, Key, Copy, Check, ShieldCheck } from 'lucide-react';
-import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface ApiKeyGuideProps {
   compact?: boolean;
@@ -21,14 +21,25 @@ export default function ApiKeyGuide({ compact = false }: ApiKeyGuideProps) {
 
   if (compact) {
     return (
-      <Collapsible open={expanded} onOpenChange={setExpanded} className="rounded-xl border border-amber-200 bg-amber-50/80 overflow-hidden">
+      <Collapsible
+        open={expanded}
+        onOpenChange={setExpanded}
+        className="rounded-xl border border-amber-200 bg-amber-50/80 overflow-hidden"
+      >
         <CollapsibleTrigger asChild>
           <button className="w-full flex items-center justify-between px-4 py-3 text-left">
             <div className="flex items-center gap-2">
               <Key className="w-4 h-4 text-amber-600" />
               <span className="text-sm font-medium text-amber-800">APIキーの取得方法</span>
             </div>
-            <svg className={`w-4 h-4 text-amber-500 transition-transform ${expanded ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+            <svg
+              className={`w-4 h-4 text-amber-500 transition-transform ${expanded ? 'rotate-180' : ''}`}
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
           </button>
         </CollapsibleTrigger>
         <CollapsibleContent>
@@ -73,7 +84,12 @@ function GuideContent({ onCopyUrl, copied }: { onCopyUrl: () => void; copied: bo
                   console.anthropic.com
                   <ExternalLink className="w-3 h-3" />
                 </a>
-                <Button variant="ghost" size="sm" onClick={onCopyUrl} className="h-auto px-2 py-0.5 text-xs bg-amber-200/60 text-amber-700 hover:bg-amber-200">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onCopyUrl}
+                  className="h-auto px-2 py-0.5 text-xs bg-amber-200/60 text-amber-700 hover:bg-amber-200"
+                >
                   {copied ? <Check className="w-3 h-3 mr-1" /> : <Copy className="w-3 h-3 mr-1" />}
                   {copied ? 'コピー済み' : 'URLをコピー'}
                 </Button>
@@ -90,8 +106,11 @@ function GuideContent({ onCopyUrl, copied }: { onCopyUrl: () => void; copied: bo
             title: 'APIキーを発行',
             desc: (
               <span>
-                ダッシュボードの「API Keys」→「Create Key」で新しいキーを作成します。
-                キーは <code className="px-1.5 py-0.5 rounded bg-amber-200/60 text-amber-800 text-xs font-mono">sk-ant-...</code> で始まります
+                ダッシュボードの「API Keys」→「Create Key」で新しいキーを作成します。 キーは{' '}
+                <code className="px-1.5 py-0.5 rounded bg-amber-200/60 text-amber-800 text-xs font-mono">
+                  sk-ant-...
+                </code>{' '}
+                で始まります
               </span>
             ),
           },
@@ -100,7 +119,7 @@ function GuideContent({ onCopyUrl, copied }: { onCopyUrl: () => void; copied: bo
             title: 'このページに貼り付け',
             desc: <span>発行されたキーをコピーして、下の入力欄に貼り付けてください</span>,
           },
-        ].map(item => (
+        ].map((item) => (
           <div key={item.step} className="flex gap-3">
             <div className="w-6 h-6 rounded-full bg-amber-200 flex items-center justify-center flex-shrink-0 mt-0.5">
               <span className="text-xs font-bold text-amber-800">{item.step}</span>

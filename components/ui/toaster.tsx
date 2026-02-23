@@ -1,7 +1,7 @@
 'use client';
 
-import { useToast } from '@/hooks/use-toast';
 import { X } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 export function Toaster() {
   const { toasts, dismiss } = useToast();
@@ -10,7 +10,7 @@ export function Toaster() {
 
   return (
     <div className="fixed bottom-4 right-4 z-[100] flex flex-col gap-2 max-w-sm">
-      {toasts.map(t => (
+      {toasts.map((t) => (
         <div
           key={t.id}
           className={`rounded-xl px-4 py-3 shadow-lg border animate-slide-up ${

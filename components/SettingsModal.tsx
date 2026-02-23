@@ -1,11 +1,11 @@
 'use client';
 
+import { AlertCircle, Check, Cpu, Eye, EyeOff, Key, User } from 'lucide-react';
 import { useState } from 'react';
-import { Key, Eye, EyeOff, Check, AlertCircle, User, Cpu } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Alert } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import ApiKeyGuide from './ApiKeyGuide';
 
@@ -71,7 +71,12 @@ export default function SettingsModal({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={open => { if (!open) onClose(); }}>
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
       <DialogContent>
         <DialogHeader>
           <DialogTitle>設定</DialogTitle>
@@ -89,18 +94,35 @@ export default function SettingsModal({
                 <Input
                   type={showKey ? 'text' : 'password'}
                   value={localKey}
-                  onChange={e => { setLocalKey(e.target.value); setTestResult(null); }}
+                  onChange={(e) => {
+                    setLocalKey(e.target.value);
+                    setTestResult(null);
+                  }}
                   placeholder="sk-ant-..."
                   className="pr-20 bg-sand-50 focus:bg-white font-mono text-sm"
                 />
-                <button onClick={() => setShowKey(!showKey)} className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md hover:bg-sand-200 transition-colors" title={showKey ? 'キーを隠す' : 'キーを表示'}>
+                <button
+                  onClick={() => setShowKey(!showKey)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md hover:bg-sand-200 transition-colors"
+                  title={showKey ? 'キーを隠す' : 'キーを表示'}
+                >
                   {showKey ? <EyeOff className="w-4 h-4 text-ink-400" /> : <Eye className="w-4 h-4 text-ink-400" />}
                 </button>
               </div>
 
               {testResult && (
                 <Alert variant={testResult === 'success' ? 'success' : 'destructive'}>
-                  {testResult === 'success' ? <><Check className="w-4 h-4" />APIキーは有効です</> : <><AlertCircle className="w-4 h-4" />APIキーが無効です</>}
+                  {testResult === 'success' ? (
+                    <>
+                      <Check className="w-4 h-4" />
+                      APIキーは有効です
+                    </>
+                  ) : (
+                    <>
+                      <AlertCircle className="w-4 h-4" />
+                      APIキーが無効です
+                    </>
+                  )}
                 </Alert>
               )}
 
@@ -129,7 +151,7 @@ export default function SettingsModal({
               <h3 className="font-medium text-ink-800">AIモデル</h3>
             </div>
             <div className="space-y-2">
-              {MODELS.map(m => (
+              {MODELS.map((m) => (
                 <button
                   key={m.id}
                   onClick={() => onModelChange(m.id)}
@@ -139,7 +161,11 @@ export default function SettingsModal({
                     <span className="font-medium text-sm text-ink-800">{m.label}</span>
                     <div className="flex items-center gap-2">
                       {m.tag && (
-                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${m.tag === 'おすすめ' ? 'bg-forge-100 text-forge-700' : 'bg-amber-100 text-amber-700'}`}>{m.tag}</span>
+                        <span
+                          className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${m.tag === 'おすすめ' ? 'bg-forge-100 text-forge-700' : 'bg-amber-100 text-amber-700'}`}
+                        >
+                          {m.tag}
+                        </span>
                       )}
                       {model === m.id && <Check className="w-4 h-4 text-forge-600" />}
                     </div>
@@ -164,7 +190,14 @@ export default function SettingsModal({
               <User className="w-4 h-4 text-forge-600" />
               <h3 className="font-medium text-ink-800">プロフィール</h3>
             </div>
-            <Button variant="outline" onClick={() => { onResetProfile(); onClose(); }} className="w-full">
+            <Button
+              variant="outline"
+              onClick={() => {
+                onResetProfile();
+                onClose();
+              }}
+              className="w-full"
+            >
               専門分野を変更する
             </Button>
           </div>

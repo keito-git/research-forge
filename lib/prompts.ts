@@ -23,21 +23,25 @@ export interface UserProfile {
 }
 
 const FIELD_KNOWLEDGE: Record<string, string> = {
-  literature: '文学研究の手法を熟知：テキスト分析、文体論、比較文学、ナラティブ分析、テーマ分析、計量分析（頻度分析、共起語分析、文体統計）。',
-  sociology: '社会学の研究手法を熟知：質的研究法（GT、エスノグラフィー）、量的研究法（統計分析、社会調査法）、KJ法、内容分析、フレーム分析。',
+  literature:
+    '文学研究の手法を熟知：テキスト分析、文体論、比較文学、ナラティブ分析、テーマ分析、計量分析（頻度分析、共起語分析、文体統計）。',
+  sociology:
+    '社会学の研究手法を熟知：質的研究法（GT、エスノグラフィー）、量的研究法（統計分析、社会調査法）、KJ法、内容分析、フレーム分析。',
   history: '歴史学の研究手法を熟知：史料批判、文書学、古文書学、年代学、歴史地理学、デジタルヒューマニティーズ。',
-  linguistics: '言語学の研究手法を熟知：コーパス言語学、談話分析、計量言語学、コロケーション分析（MI値、t値）、形態素解析。',
+  linguistics:
+    '言語学の研究手法を熟知：コーパス言語学、談話分析、計量言語学、コロケーション分析（MI値、t値）、形態素解析。',
   anthropology: '人類学の研究手法を熟知：参与観察、フィールドワーク、民族誌、ライフヒストリー、構造分析。',
   education: '教育学の研究手法を熟知：授業分析、教育評価（ルーブリック）、アクションリサーチ、教育統計、質問紙調査。',
   psychology: '心理学の研究手法を熟知：実験法、尺度構成、因子分析、分散分析、回帰分析、信頼性分析（クロンバックα）。',
   politics: '政治学の研究手法を熟知：比較政治学、計量政治学、世論調査、内容分析、政策分析、投票行動分析。',
   philosophy: '哲学の研究手法を熟知：テキスト解釈学、概念分析、論理分析、思想史研究、比較思想、批判理論。',
-  media: 'メディア研究の手法を熟知：内容分析、フレーム分析、談話分析、受容研究、ソーシャルメディア分析、センチメント分析。',
+  media:
+    'メディア研究の手法を熟知：内容分析、フレーム分析、談話分析、受容研究、ソーシャルメディア分析、センチメント分析。',
   other: '人文・社会学の幅広い研究手法に精通。',
 };
 
 export function buildSystemPrompt(profile: UserProfile, apiKey?: string): string {
-  const fieldLabel = FIELDS.find(f => f.id === profile.field)?.label ?? profile.fieldCustom ?? '人文・社会学';
+  const fieldLabel = FIELDS.find((f) => f.id === profile.field)?.label ?? profile.fieldCustom ?? '人文・社会学';
   const fieldKnowledge = FIELD_KNOWLEDGE[profile.field] ?? FIELD_KNOWLEDGE.other;
   const hasApiKey = !!apiKey;
 
