@@ -30,12 +30,13 @@ export async function POST(req: Request) {
     });
 
     return result.toDataStreamResponse();
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Chat API error:', error);
+    const msg = error instanceof Error ? error.message : '';
     const message =
-      error?.message?.includes('401') || error?.message?.includes('authentication')
+      msg.includes('401') || msg.includes('authentication')
         ? 'APIキーが無効です。正しいキーを入力してください。'
-        : error?.message?.includes('429')
+        : msg.includes('429')
           ? 'リクエストが多すぎます。少し待ってから再度お試しください。'
           : 'エラーが発生しました。もう一度お試しください。';
     return Response.json({ error: message }, { status: 500 });

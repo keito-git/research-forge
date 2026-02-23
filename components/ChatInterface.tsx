@@ -1353,7 +1353,7 @@ export default function ChatInterface({
                     ref={iframeRef}
                     srcDoc={iframeSrcDoc}
                     className="preview-frame flex-1"
-                    sandbox="allow-scripts allow-forms allow-modals allow-same-origin"
+                    sandbox="allow-scripts allow-forms allow-modals"
                     title={tool.title}
                   />
                 </TabsContent>

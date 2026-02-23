@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import ErrorBoundary from '@/components/ErrorBoundary';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import './globals.css';
@@ -13,7 +14,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ja">
       <body className="grain-overlay">
-        <TooltipProvider>{children}</TooltipProvider>
+        <ErrorBoundary>
+          <TooltipProvider>{children}</TooltipProvider>
+        </ErrorBoundary>
         <Toaster />
       </body>
     </html>
