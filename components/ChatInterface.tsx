@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback, useMemo, memo, lazy, Suspense } from 'react';
 import { useChat, type Message } from 'ai/react';
-import { Send, Sparkles, Download, ExternalLink, Info, Sliders, Code, Eye, Settings, BookOpen, Save, Bookmark, RefreshCw, MessageSquarePlus, Trash2 } from 'lucide-react';
+import { Send, Sparkles, Download, ExternalLink, Info, Sliders, Code, Eye, Settings, BookOpen, Save, Bookmark, RefreshCw, MessageSquarePlus, Trash2, Copy, Check } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { type UserProfile, FIELDS } from '@/lib/prompts';
@@ -13,6 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardTitle, CardDescription } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { Slider } from '@/components/ui/slider';
@@ -289,6 +290,21 @@ const markdownComponents = {
   td: ({ children, ...props }: React.HTMLAttributes<HTMLTableCellElement>) => <td className="border border-sand-300 px-3 py-1.5" {...props}>{children}</td>,
 };
 
+// Copy button component
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = useCallback(() => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }, [text]);
+  return (
+    <button onClick={handleCopy} className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-md hover:bg-sand-200" title="コピー">
+      {copied ? <Check className="w-3.5 h-3.5 text-forge-600" /> : <Copy className="w-3.5 h-3.5 text-ink-400" />}
+    </button>
+  );
+}
+
 // Memoized message bubble to avoid re-rendering all messages on input change
 const ChatBubble = memo(function ChatBubble({
   message,
@@ -372,7 +388,7 @@ const ChatBubble = memo(function ChatBubble({
 
   return (
     <div className="message-enter">
-      <div className={`flex gap-3 ${message.role === 'user' ? 'flex-row-reverse' : ''}`}>
+      <div className={`group flex gap-3 ${message.role === 'user' ? 'flex-row-reverse' : ''}`}>
         {message.role === 'assistant' && (
           <div className="w-8 h-8 rounded-full bg-forge-100 flex items-center justify-center flex-shrink-0 mt-0.5">
             <Sparkles className="w-4 h-4 text-forge-600" />
@@ -381,6 +397,11 @@ const ChatBubble = memo(function ChatBubble({
         <div className={`max-w-[85%] rounded-2xl px-4 py-3 ${message.role === 'user' ? 'bg-forge-600 text-white rounded-tr-md' : 'bg-sand-50 text-ink-700 rounded-tl-md'}`}>
           {renderedContent}
         </div>
+        {message.role === 'assistant' && !showStreaming && content && !content.includes('"tool_generation"') && (
+          <div className="flex items-start mt-1">
+            <CopyButton text={content} />
+          </div>
+        )}
       </div>
     </div>
   );
@@ -398,6 +419,7 @@ export default function ChatInterface({ profile, apiKey, model, onApiKeyChange, 
   const [mobileView, setMobileView] = useState<'chat' | 'preview'>('chat');
   const [lastFailedInput, setLastFailedInput] = useState<string | null>(null);
   const [storageReady, setStorageReady] = useState(false);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConversationId, setActiveConversationId] = useState<string>('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -668,6 +690,7 @@ export default function ChatInterface({ profile, apiKey, model, onApiKeyChange, 
     }
     setMessages([]);
     setActiveConversationId('');
+    setShowClearConfirm(false);
     setTool(null);
   }, [setMessages, activeConversationId]);
 
@@ -697,6 +720,22 @@ export default function ChatInterface({ profile, apiKey, model, onApiKeyChange, 
       setTool(null);
     }
   }, [activeConversationId, setMessages]);
+
+  const handleDeleteSavedTool = useCallback((toolId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSavedTools(prev => prev.filter(t => t.id !== toolId));
+    toast({ title: 'ツールを削除しました' });
+  }, []);
+
+  const handleDeleteGalleryTool = useCallback((toolId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCommunityTools(prev => {
+      const updated = prev.filter(t => t.id !== toolId);
+      putAll('communityTools', updated).catch(() => {});
+      return updated;
+    });
+    toast({ title: 'ギャラリーから削除しました' });
+  }, []);
 
   const handleDownload = useCallback(() => {
     if (!tool) return;
@@ -750,7 +789,7 @@ export default function ChatInterface({ profile, apiKey, model, onApiKeyChange, 
           <Button variant="ghost" size="sm" onClick={handleNewConversation} className="gap-1.5">
             <MessageSquarePlus className="w-3.5 h-3.5" />新しい会話
           </Button>
-          <Button variant="ghost" size="sm" onClick={handleClearChat} disabled={messages.length === 0}>
+          <Button variant="ghost" size="sm" onClick={() => setShowClearConfirm(true)} disabled={messages.length === 0}>
             チャットを削除
           </Button>
           <Button variant="ghost" size="sm" onClick={() => setShowSettings(true)} className="gap-1.5">
@@ -764,6 +803,20 @@ export default function ChatInterface({ profile, apiKey, model, onApiKeyChange, 
           <SettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} apiKey={apiKey} model={model} onApiKeyChange={onApiKeyChange} onModelChange={onModelChange} onResetProfile={onResetProfile} />
         </Suspense>
       )}
+
+      {/* Clear Chat Confirmation */}
+      <Dialog open={showClearConfirm} onOpenChange={setShowClearConfirm}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>会話を削除</DialogTitle>
+            <DialogDescription>この会話を削除してもよろしいですか？この操作は元に戻せません。</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowClearConfirm(false)}>キャンセル</Button>
+            <Button variant="destructive" onClick={handleClearChat}>削除する</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Mobile Tab Bar */}
       <div className="flex md:hidden border-b border-sand-200 bg-white">
@@ -933,8 +986,13 @@ export default function ChatInterface({ profile, apiKey, model, onApiKeyChange, 
               ) : (
                 <div className="space-y-3">
                   {savedTools.map(t => (
-                    <Card key={t.id} className="cursor-pointer hover:border-forge-300 hover:shadow-sm transition-all p-4" onClick={() => handleLoadTool(t)}>
-                      <CardTitle>{t.title}</CardTitle>
+                    <Card key={t.id} className="group cursor-pointer hover:border-forge-300 hover:shadow-sm transition-all p-4" onClick={() => handleLoadTool(t)}>
+                      <div className="flex items-start justify-between">
+                        <CardTitle>{t.title}</CardTitle>
+                        <button onClick={(e) => handleDeleteSavedTool(t.id, e)} className="opacity-0 group-hover:opacity-100 p-1 rounded-md hover:bg-red-50 transition-all" title="削除">
+                          <Trash2 className="w-3.5 h-3.5 text-ink-400 hover:text-red-500" />
+                        </button>
+                      </div>
                       <CardDescription className="mt-1 line-clamp-2">{t.description}</CardDescription>
                       <div className="flex items-center gap-2 mt-2">
                         <Badge>{t.field}</Badge>
@@ -951,8 +1009,13 @@ export default function ChatInterface({ profile, apiKey, model, onApiKeyChange, 
               <p className="text-xs text-ink-400 mb-2">保存したツールやサンプルツールを閲覧できます</p>
               <div className="space-y-3">
                 {communityTools.map(t => (
-                  <Card key={t.id} className="cursor-pointer hover:border-forge-300 hover:shadow-sm transition-all p-4" onClick={() => handleLoadTool(t)}>
-                    <CardTitle>{t.title}</CardTitle>
+                  <Card key={t.id} className="group cursor-pointer hover:border-forge-300 hover:shadow-sm transition-all p-4" onClick={() => handleLoadTool(t)}>
+                    <div className="flex items-start justify-between">
+                      <CardTitle>{t.title}</CardTitle>
+                      <button onClick={(e) => handleDeleteGalleryTool(t.id, e)} className="opacity-0 group-hover:opacity-100 p-1 rounded-md hover:bg-red-50 transition-all" title="削除">
+                        <Trash2 className="w-3.5 h-3.5 text-ink-400 hover:text-red-500" />
+                      </button>
+                    </div>
                     <CardDescription className="mt-1 line-clamp-2">{t.description}</CardDescription>
                     <div className="flex items-center gap-2 mt-2">
                       <Badge variant="secondary">{t.field}</Badge>
