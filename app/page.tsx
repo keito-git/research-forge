@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import Onboarding from '@/components/Onboarding';
+import { useEffect, useState } from 'react';
 import ChatInterface from '@/components/ChatInterface';
-import { type UserProfile } from '@/lib/prompts';
+import Onboarding from '@/components/Onboarding';
+import type { UserProfile } from '@/lib/prompts';
 
 const PROFILE_KEY = 'research-forge-profile';
 const APIKEY_KEY = 'research-forge-apikey';
@@ -42,17 +42,23 @@ export default function Home() {
 
   const handleApiKeyChange = (newKey: string) => {
     setApiKey(newKey);
-    try { localStorage.setItem(APIKEY_KEY, newKey); } catch {}
+    try {
+      localStorage.setItem(APIKEY_KEY, newKey);
+    } catch {}
   };
 
   const handleModelChange = (newModel: string) => {
     setModel(newModel);
-    try { localStorage.setItem(MODEL_KEY, newModel); } catch {}
+    try {
+      localStorage.setItem(MODEL_KEY, newModel);
+    } catch {}
   };
 
   const handleResetProfile = () => {
     setProfile(null);
-    try { localStorage.removeItem(PROFILE_KEY); } catch {}
+    try {
+      localStorage.removeItem(PROFILE_KEY);
+    } catch {}
   };
 
   if (loading) {
@@ -71,12 +77,7 @@ export default function Home() {
   }
 
   if (!profile || !apiKey) {
-    return (
-      <Onboarding
-        onComplete={handleOnboardingComplete}
-        initialApiKey={apiKey}
-      />
-    );
+    return <Onboarding onComplete={handleOnboardingComplete} initialApiKey={apiKey} />;
   }
 
   return (

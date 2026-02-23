@@ -1,15 +1,20 @@
 'use client';
 
+import { AlertCircle, Check, Cpu, Eye, EyeOff, Key, User } from 'lucide-react';
 import { useState } from 'react';
-import { X, Key, Eye, EyeOff, Check, AlertCircle, User, Cpu } from 'lucide-react';
+import { Alert } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Separator } from '@/components/ui/separator';
 import ApiKeyGuide from './ApiKeyGuide';
 
 const MODELS = [
-  { id: 'claude-sonnet-4-20250514', label: 'Claude Sonnet 4', desc: '⚡ 速い・安い（$3/$15）', tag: 'おすすめ' },
-  { id: 'claude-sonnet-4-5-20250929', label: 'Claude Sonnet 4.5', desc: '⚡ 高速・高性能（$3/$15）', tag: '' },
-  { id: 'claude-opus-4-20250514', label: 'Claude Opus 4', desc: '🧠 高品質・遅め（$15/$75）', tag: '' },
-  { id: 'claude-opus-4-5-20250527', label: 'Claude Opus 4.5', desc: '🧠 高品質（$5/$25）', tag: '' },
-  { id: 'claude-opus-4-6', label: 'Claude Opus 4.6', desc: '🧠 最高性能・遅い（$5/$25）', tag: '最新' },
+  { id: 'claude-sonnet-4-20250514', label: 'Claude Sonnet 4', desc: '速い・安い（$3/$15）', tag: 'おすすめ' },
+  { id: 'claude-sonnet-4-5-20250929', label: 'Claude Sonnet 4.5', desc: '高速・高性能（$3/$15）', tag: '' },
+  { id: 'claude-opus-4-20250514', label: 'Claude Opus 4', desc: '高品質・遅め（$15/$75）', tag: '' },
+  { id: 'claude-opus-4-5-20250527', label: 'Claude Opus 4.5', desc: '高品質（$5/$25）', tag: '' },
+  { id: 'claude-opus-4-6', label: 'Claude Opus 4.6', desc: '最高性能・遅い（$5/$25）', tag: '最新' },
 ];
 
 interface SettingsModalProps {
@@ -36,8 +41,6 @@ export default function SettingsModal({
   const [saved, setSaved] = useState(false);
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<'success' | 'error' | null>(null);
-
-  if (!isOpen) return null;
 
   const handleSave = () => {
     onApiKeyChange(localKey.trim());
@@ -68,16 +71,16 @@ export default function SettingsModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-ink-950/40 backdrop-blur-sm" onClick={onClose} />
-
-      <div className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden animate-slide-up">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-sand-200">
-          <h2 className="font-display text-lg font-bold text-ink-900">設定</h2>
-          <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-sand-100 transition-colors">
-            <X className="w-4 h-4 text-ink-500" />
-          </button>
-        </div>
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>設定</DialogTitle>
+        </DialogHeader>
 
         <div className="px-6 py-5 space-y-6 max-h-[70vh] overflow-y-auto">
           {/* API Key Section */}
@@ -88,31 +91,48 @@ export default function SettingsModal({
             </div>
             <div className="space-y-3">
               <div className="relative">
-                <input
+                <Input
                   type={showKey ? 'text' : 'password'}
                   value={localKey}
-                  onChange={e => { setLocalKey(e.target.value); setTestResult(null); }}
+                  onChange={(e) => {
+                    setLocalKey(e.target.value);
+                    setTestResult(null);
+                  }}
                   placeholder="sk-ant-..."
-                  className="w-full px-4 py-3 pr-20 rounded-xl border-2 border-sand-200 bg-sand-50 focus:border-forge-500 focus:bg-white focus:outline-none transition-all font-mono text-sm"
+                  className="pr-20 bg-sand-50 focus:bg-white font-mono text-sm"
                 />
-                <button onClick={() => setShowKey(!showKey)} className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md hover:bg-sand-200 transition-colors" title={showKey ? 'キーを隠す' : 'キーを表示'}>
+                <button
+                  onClick={() => setShowKey(!showKey)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md hover:bg-sand-200 transition-colors"
+                  title={showKey ? 'キーを隠す' : 'キーを表示'}
+                >
                   {showKey ? <EyeOff className="w-4 h-4 text-ink-400" /> : <Eye className="w-4 h-4 text-ink-400" />}
                 </button>
               </div>
 
               {testResult && (
-                <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${testResult === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
-                  {testResult === 'success' ? <><Check className="w-4 h-4" />APIキーは有効です</> : <><AlertCircle className="w-4 h-4" />APIキーが無効です</>}
-                </div>
+                <Alert variant={testResult === 'success' ? 'success' : 'destructive'}>
+                  {testResult === 'success' ? (
+                    <>
+                      <Check className="w-4 h-4" />
+                      APIキーは有効です
+                    </>
+                  ) : (
+                    <>
+                      <AlertCircle className="w-4 h-4" />
+                      APIキーが無効です
+                    </>
+                  )}
+                </Alert>
               )}
 
               <div className="flex gap-2">
-                <button onClick={handleTest} disabled={!localKey.trim() || testing} className="px-4 py-2 rounded-lg border border-sand-300 text-sm text-ink-600 hover:bg-sand-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all">
+                <Button variant="outline" size="sm" onClick={handleTest} disabled={!localKey.trim() || testing}>
                   {testing ? '確認中...' : '接続テスト'}
-                </button>
-                <button onClick={handleSave} disabled={!localKey.trim()} className="flex-1 py-2 rounded-lg bg-forge-600 text-white text-sm font-medium hover:bg-forge-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all">
-                  {saved ? '✓ 保存しました' : '保存'}
-                </button>
+                </Button>
+                <Button size="sm" onClick={handleSave} disabled={!localKey.trim()} className="flex-1">
+                  {saved ? '\u2713 保存しました' : '保存'}
+                </Button>
               </div>
 
               <p className="text-xs text-ink-400 flex items-center gap-1">
@@ -122,14 +142,16 @@ export default function SettingsModal({
             </div>
           </div>
 
+          <Separator />
+
           {/* Model Selection */}
-          <div className="pt-2 border-t border-sand-200">
+          <div>
             <div className="flex items-center gap-2 mb-3">
               <Cpu className="w-4 h-4 text-forge-600" />
               <h3 className="font-medium text-ink-800">AIモデル</h3>
             </div>
             <div className="space-y-2">
-              {MODELS.map(m => (
+              {MODELS.map((m) => (
                 <button
                   key={m.id}
                   onClick={() => onModelChange(m.id)}
@@ -139,7 +161,11 @@ export default function SettingsModal({
                     <span className="font-medium text-sm text-ink-800">{m.label}</span>
                     <div className="flex items-center gap-2">
                       {m.tag && (
-                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${m.tag === 'おすすめ' ? 'bg-forge-100 text-forge-700' : 'bg-amber-100 text-amber-700'}`}>{m.tag}</span>
+                        <span
+                          className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${m.tag === 'おすすめ' ? 'bg-forge-100 text-forge-700' : 'bg-amber-100 text-amber-700'}`}
+                        >
+                          {m.tag}
+                        </span>
                       )}
                       {model === m.id && <Check className="w-4 h-4 text-forge-600" />}
                     </div>
@@ -149,25 +175,34 @@ export default function SettingsModal({
               ))}
             </div>
             <p className="text-xs text-ink-400 mt-2">
-              ⚠️ Opusモデルは高品質ですが応答に時間がかかり、Vercel無料プランではタイムアウトする場合があります
+              Opusモデルは高品質ですが応答に時間がかかり、Vercel無料プランではタイムアウトする場合があります
             </p>
           </div>
 
           {/* API Key Guide */}
           <ApiKeyGuide compact />
 
+          <Separator />
+
           {/* Profile Section */}
-          <div className="pt-2 border-t border-sand-200">
+          <div>
             <div className="flex items-center gap-2 mb-3">
               <User className="w-4 h-4 text-forge-600" />
               <h3 className="font-medium text-ink-800">プロフィール</h3>
             </div>
-            <button onClick={() => { onResetProfile(); onClose(); }} className="w-full py-2.5 rounded-lg border border-sand-300 text-sm text-ink-600 hover:bg-sand-100 transition-all">
+            <Button
+              variant="outline"
+              onClick={() => {
+                onResetProfile();
+                onClose();
+              }}
+              className="w-full"
+            >
               専門分野を変更する
-            </button>
+            </Button>
           </div>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

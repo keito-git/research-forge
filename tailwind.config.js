@@ -1,6 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  content: ['./app/**/*.{js,ts,jsx,tsx,mdx}', './components/**/*.{js,ts,jsx,tsx,mdx}'],
+  content: ['./app/**/*.{js,ts,jsx,tsx,mdx}', './components/**/*.{js,ts,jsx,tsx,mdx}', './hooks/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
       colors: {
@@ -42,6 +42,18 @@ module.exports = {
           900: '#3a3530',
           950: '#1f1c18',
         },
+        border: '#e8ddd0',
+        input: '#e8ddd0',
+        ring: '#3d6b4f',
+        background: '#faf7f2',
+        foreground: '#3a3530',
+        primary: { DEFAULT: '#3d6b4f', foreground: '#ffffff' },
+        secondary: { DEFAULT: '#f5f0e8', foreground: '#3a3530' },
+        destructive: { DEFAULT: '#ef4444', foreground: '#ffffff' },
+        muted: { DEFAULT: '#f5f0e8', foreground: '#7a7068' },
+        accent: { DEFAULT: '#f5f0e8', foreground: '#3a3530' },
+        popover: { DEFAULT: '#ffffff', foreground: '#3a3530' },
+        card: { DEFAULT: '#ffffff', foreground: '#3a3530' },
       },
       fontFamily: {
         display: ['"Noto Serif JP"', 'Georgia', 'serif'],
@@ -55,13 +67,16 @@ module.exports = {
       },
       keyframes: {
         fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
-        slideUp: { '0%': { opacity: '0', transform: 'translateY(10px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
+        slideUp: {
+          '0%': { opacity: '0', transform: 'translateY(10px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
         pulseSoft: { '0%, 100%': { opacity: '1' }, '50%': { opacity: '0.5' } },
       },
       borderRadius: {
-        'organic': '12px 20px 12px 20px',
+        organic: '12px 20px 12px 20px',
       },
     },
   },
-  plugins: [],
+  plugins: [require('tailwindcss-animate')],
 };
