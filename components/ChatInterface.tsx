@@ -2,11 +2,11 @@
 
 import { useState, useRef, useEffect, useCallback, useMemo, memo, lazy, Suspense } from 'react';
 import { useChat, type Message } from 'ai/react';
-import { Send, Sparkles, Download, ExternalLink, Info, Sliders, Code, Eye, Settings, BookOpen, Save, Bookmark, RefreshCw } from 'lucide-react';
+import { Send, Sparkles, Download, ExternalLink, Info, Sliders, Code, Eye, Settings, BookOpen, Save, Bookmark, RefreshCw, MessageSquarePlus, Trash2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { type UserProfile, FIELDS } from '@/lib/prompts';
-import { getAll, put, putAll, clear, migrateFromLocalStorage } from '@/lib/storage';
+import { getAll, put, putAll, clear, remove, migrateFromLocalStorage } from '@/lib/storage';
 import { toast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -61,6 +61,14 @@ interface SavedTool {
   field: string;
   createdAt: string;
   author?: string;
+}
+
+interface Conversation {
+  id: string;
+  title: string;
+  messages: Message[];
+  createdAt: string;
+  updatedAt: string;
 }
 
 function tryParseToolGeneration(text: string): GeneratedTool | null {
@@ -385,11 +393,13 @@ export default function ChatInterface({ profile, apiKey, model, onApiKeyChange, 
   const [showSettings, setShowSettings] = useState(false);
   const [savedTools, setSavedTools] = useState<SavedTool[]>([]);
   const [communityTools, setCommunityTools] = useState<SavedTool[]>([]);
-  const [sidePanel, setSidePanel] = useState<'chat' | 'saved' | 'gallery'>('chat');
+  const [sidePanel, setSidePanel] = useState<'chat' | 'history' | 'saved' | 'gallery'>('chat');
   const [toolSaved, setToolSaved] = useState(false);
   const [mobileView, setMobileView] = useState<'chat' | 'preview'>('chat');
   const [lastFailedInput, setLastFailedInput] = useState<string | null>(null);
   const [storageReady, setStorageReady] = useState(false);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [activeConversationId, setActiveConversationId] = useState<string>('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const fieldInfo = useMemo(() => FIELDS.find(f => f.id === profile.field), [profile.field]);
@@ -453,18 +463,39 @@ export default function ChatInterface({ profile, apiKey, model, onApiKeyChange, 
     (async () => {
       try {
         await migrateFromLocalStorage();
-        const [savedData, communityData] = await Promise.all([
+        const [savedData, communityData, chatData] = await Promise.all([
           getAll<SavedTool>('savedTools'),
           getAll<SavedTool>('communityTools'),
+          getAll<Conversation>('chatHistory'),
         ]);
         setSavedTools(savedData);
         setCommunityTools(communityData.length > 0 ? communityData : DEFAULT_COMMUNITY_TOOLS);
 
-        // Load chat history
-        const chatData = await getAll<{ id: string; messages: Message[] }>('chatHistory');
-        const current = chatData.find(c => c.id === 'current');
-        if (current?.messages?.length) {
-          setMessages(current.messages);
+        // Migrate old single-conversation format
+        const oldFormat = chatData.find(c => c.id === 'current' && !c.title);
+        if (oldFormat) {
+          const oldMessages = (oldFormat as Conversation & { messages: Message[] }).messages ?? [];
+          const migrated: Conversation = {
+            id: `conv-${Date.now()}`,
+            title: '以前の会話',
+            messages: oldMessages,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          };
+          await remove('chatHistory', 'current');
+          await put('chatHistory', migrated);
+          setConversations([migrated]);
+          setActiveConversationId(migrated.id);
+          setMessages(migrated.messages);
+        } else {
+          const convs = (chatData as Conversation[])
+            .filter(c => c.title)
+            .sort((a, b) => (b.updatedAt ?? '').localeCompare(a.updatedAt ?? ''));
+          setConversations(convs);
+          if (convs.length > 0) {
+            setActiveConversationId(convs[0].id);
+            setMessages(convs[0].messages);
+          }
         }
       } catch {
         setCommunityTools(DEFAULT_COMMUNITY_TOOLS);
@@ -475,12 +506,29 @@ export default function ChatInterface({ profile, apiKey, model, onApiKeyChange, 
 
   // Save chat messages to IndexedDB when they change (debounced)
   useEffect(() => {
-    if (!storageReady || messages.length === 0) return;
+    if (!storageReady || messages.length === 0 || !activeConversationId) return;
     const timeout = setTimeout(() => {
-      put('chatHistory', { id: 'current', messages }).catch(() => {});
+      const conv: Conversation = {
+        id: activeConversationId,
+        title: conversations.find(c => c.id === activeConversationId)?.title
+          ?? (messages[0]?.content?.slice(0, 30) || '新しい会話'),
+        messages,
+        createdAt: conversations.find(c => c.id === activeConversationId)?.createdAt ?? new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      put('chatHistory', conv).catch(() => {});
+      setConversations(prev => {
+        const existing = prev.findIndex(c => c.id === activeConversationId);
+        if (existing >= 0) {
+          const updated = [...prev];
+          updated[existing] = conv;
+          return updated;
+        }
+        return [conv, ...prev];
+      });
     }, 500);
     return () => clearTimeout(timeout);
-  }, [messages, storageReady]);
+  }, [messages, storageReady, activeConversationId]);
 
   // Save tools to IndexedDB when they change
   useEffect(() => {
@@ -525,16 +573,18 @@ export default function ChatInterface({ profile, apiKey, model, onApiKeyChange, 
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
       e.preventDefault();
       if (input.trim() && !isLoading) {
+        if (!activeConversationId) setActiveConversationId(`conv-${Date.now()}`);
         chatHandleSubmit(e as unknown as React.FormEvent);
       }
     }
-  }, [input, isLoading, chatHandleSubmit]);
+  }, [input, isLoading, chatHandleSubmit, activeConversationId]);
 
   const handleSend = useCallback((e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
+    if (!activeConversationId) setActiveConversationId(`conv-${Date.now()}`);
     chatHandleSubmit(e);
-  }, [input, isLoading, chatHandleSubmit]);
+  }, [input, isLoading, chatHandleSubmit, activeConversationId]);
 
   // Retry failed message
   const handleRetry = useCallback(() => {
@@ -612,9 +662,41 @@ export default function ChatInterface({ profile, apiKey, model, onApiKeyChange, 
   }, []);
 
   const handleClearChat = useCallback(() => {
+    if (activeConversationId) {
+      remove('chatHistory', activeConversationId).catch(() => {});
+      setConversations(prev => prev.filter(c => c.id !== activeConversationId));
+    }
     setMessages([]);
-    clear('chatHistory').catch(() => {});
+    setActiveConversationId('');
+    setTool(null);
+  }, [setMessages, activeConversationId]);
+
+  const handleNewConversation = useCallback(() => {
+    const newId = `conv-${Date.now()}`;
+    setMessages([]);
+    setActiveConversationId(newId);
+    setTool(null);
+    setLastFailedInput(null);
   }, [setMessages]);
+
+  const handleSwitchConversation = useCallback((conv: Conversation) => {
+    setActiveConversationId(conv.id);
+    setMessages(conv.messages);
+    setTool(null);
+    setLastFailedInput(null);
+    setSidePanel('chat');
+  }, [setMessages]);
+
+  const handleDeleteConversation = useCallback((convId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    remove('chatHistory', convId).catch(() => {});
+    setConversations(prev => prev.filter(c => c.id !== convId));
+    if (activeConversationId === convId) {
+      setMessages([]);
+      setActiveConversationId('');
+      setTool(null);
+    }
+  }, [activeConversationId, setMessages]);
 
   const handleDownload = useCallback(() => {
     if (!tool) return;
@@ -665,8 +747,11 @@ export default function ChatInterface({ profile, apiKey, model, onApiKeyChange, 
           </div>
         </div>
         <div className="flex items-center gap-1">
-          <Button variant="ghost" size="sm" onClick={handleClearChat}>
-            チャットをクリア
+          <Button variant="ghost" size="sm" onClick={handleNewConversation} className="gap-1.5">
+            <MessageSquarePlus className="w-3.5 h-3.5" />新しい会話
+          </Button>
+          <Button variant="ghost" size="sm" onClick={handleClearChat} disabled={messages.length === 0}>
+            チャットを削除
           </Button>
           <Button variant="ghost" size="sm" onClick={() => setShowSettings(true)} className="gap-1.5">
             <Settings className="w-3.5 h-3.5" />設定
@@ -695,9 +780,10 @@ export default function ChatInterface({ profile, apiKey, model, onApiKeyChange, 
         {/* Left Panel */}
         <div className={`w-full md:w-[42%] flex-col border-r border-sand-200 bg-white ${mobileView === 'chat' ? 'flex' : 'hidden md:flex'}`}>
           {/* Left Panel Tabs */}
-          <Tabs value={sidePanel} onValueChange={v => setSidePanel(v as 'chat' | 'saved' | 'gallery')} className="flex flex-col flex-1 overflow-hidden">
+          <Tabs value={sidePanel} onValueChange={v => setSidePanel(v as typeof sidePanel)} className="flex flex-col flex-1 overflow-hidden">
             <TabsList className="border-b border-sand-200 rounded-none bg-transparent shrink-0">
               <TabsTrigger value="chat"><Sparkles className="w-3.5 h-3.5" />チャット</TabsTrigger>
+              <TabsTrigger value="history"><MessageSquarePlus className="w-3.5 h-3.5" />履歴({conversations.length})</TabsTrigger>
               <TabsTrigger value="saved"><Bookmark className="w-3.5 h-3.5" />保存済み({savedTools.length})</TabsTrigger>
               <TabsTrigger value="gallery"><BookOpen className="w-3.5 h-3.5" />ギャラリー</TabsTrigger>
             </TabsList>
@@ -802,6 +888,38 @@ export default function ChatInterface({ profile, apiKey, model, onApiKeyChange, 
                 </div>
                 <p className="text-[11px] text-ink-300 mt-1.5 text-right">Ctrl+Enter ({'\u2318'}+Enter) で送信 ・ Enterで改行</p>
               </form>
+            </TabsContent>
+
+            {/* Conversation History Panel */}
+            <TabsContent value="history" className="flex-1 overflow-auto p-4">
+              {conversations.length === 0 ? (
+                <div className="text-center py-12">
+                  <MessageSquarePlus className="w-10 h-10 text-sand-300 mx-auto mb-3" />
+                  <p className="text-sm text-ink-400">会話履歴はまだありません</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {conversations.map(conv => (
+                    <div
+                      key={conv.id}
+                      onClick={() => handleSwitchConversation(conv)}
+                      className={`group cursor-pointer rounded-xl px-4 py-3 border transition-all ${conv.id === activeConversationId ? 'border-forge-500 bg-forge-50' : 'border-sand-200 bg-white hover:border-forge-300'}`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium text-ink-800 truncate flex-1">{conv.title}</p>
+                        <button
+                          onClick={(e) => handleDeleteConversation(conv.id, e)}
+                          className="opacity-0 group-hover:opacity-100 p-1 rounded-md hover:bg-red-50 transition-all"
+                          title="会話を削除"
+                        >
+                          <Trash2 className="w-3.5 h-3.5 text-ink-400 hover:text-red-500" />
+                        </button>
+                      </div>
+                      <p className="text-xs text-ink-400 mt-0.5">{conv.messages.length}件のメッセージ ・ {conv.updatedAt?.split('T')[0]}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
             </TabsContent>
 
             {/* Saved Tools Panel */}
