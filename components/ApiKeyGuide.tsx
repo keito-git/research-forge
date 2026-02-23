@@ -1,7 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { ExternalLink, ChevronDown, ChevronUp, Key, Copy, Check, ShieldCheck } from 'lucide-react';
+import { ExternalLink, Key, Copy, Check, ShieldCheck } from 'lucide-react';
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
+import { Button } from '@/components/ui/button';
 
 interface ApiKeyGuideProps {
   compact?: boolean;
@@ -19,23 +21,20 @@ export default function ApiKeyGuide({ compact = false }: ApiKeyGuideProps) {
 
   if (compact) {
     return (
-      <div className="rounded-xl border border-amber-200 bg-amber-50/80 overflow-hidden">
-        <button
-          onClick={() => setExpanded(!expanded)}
-          className="w-full flex items-center justify-between px-4 py-3 text-left"
-        >
-          <div className="flex items-center gap-2">
-            <Key className="w-4 h-4 text-amber-600" />
-            <span className="text-sm font-medium text-amber-800">APIキーの取得方法</span>
-          </div>
-          {expanded ? (
-            <ChevronUp className="w-4 h-4 text-amber-500" />
-          ) : (
-            <ChevronDown className="w-4 h-4 text-amber-500" />
-          )}
-        </button>
-        {expanded && <GuideContent onCopyUrl={copyUrl} copied={copied} />}
-      </div>
+      <Collapsible open={expanded} onOpenChange={setExpanded} className="rounded-xl border border-amber-200 bg-amber-50/80 overflow-hidden">
+        <CollapsibleTrigger asChild>
+          <button className="w-full flex items-center justify-between px-4 py-3 text-left">
+            <div className="flex items-center gap-2">
+              <Key className="w-4 h-4 text-amber-600" />
+              <span className="text-sm font-medium text-amber-800">APIキーの取得方法</span>
+            </div>
+            <svg className={`w-4 h-4 text-amber-500 transition-transform ${expanded ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+          </button>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <GuideContent onCopyUrl={copyUrl} copied={copied} />
+        </CollapsibleContent>
+      </Collapsible>
     );
   }
 
@@ -74,13 +73,10 @@ function GuideContent({ onCopyUrl, copied }: { onCopyUrl: () => void; copied: bo
                   console.anthropic.com
                   <ExternalLink className="w-3 h-3" />
                 </a>
-                <button
-                  onClick={onCopyUrl}
-                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs bg-amber-200/60 text-amber-700 hover:bg-amber-200 transition-colors"
-                >
-                  {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                <Button variant="ghost" size="sm" onClick={onCopyUrl} className="h-auto px-2 py-0.5 text-xs bg-amber-200/60 text-amber-700 hover:bg-amber-200">
+                  {copied ? <Check className="w-3 h-3 mr-1" /> : <Copy className="w-3 h-3 mr-1" />}
                   {copied ? 'コピー済み' : 'URLをコピー'}
-                </button>
+                </Button>
               </div>
             ),
           },

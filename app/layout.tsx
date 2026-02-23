@@ -1,4 +1,6 @@
 import type { Metadata } from 'next';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { Toaster } from '@/components/ui/toaster';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -14,7 +16,10 @@ export default function RootLayout({
   return (
     <html lang="ja">
       <body className="grain-overlay">
-        {children}
+        <TooltipProvider>
+          {children}
+        </TooltipProvider>
+        <Toaster />
       </body>
     </html>
   );
