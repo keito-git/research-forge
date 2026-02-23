@@ -1,4 +1,4 @@
-import { generateText } from 'ai';
+import { streamText } from 'ai';
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { buildSystemPrompt, type UserProfile } from '@/lib/prompts';
 
@@ -22,14 +22,14 @@ export async function POST(req: Request) {
   const systemPrompt = buildSystemPrompt(userProfile, key);
 
   try {
-    const result = await generateText({
+    const result = streamText({
       model: anthropic(selectedModel),
       system: systemPrompt,
       messages,
       maxTokens: 16384,
     });
 
-    return Response.json({ content: result.text });
+    return result.toDataStreamResponse();
   } catch (error: any) {
     console.error('Chat API error:', error);
     const message = error?.message?.includes('401') || error?.message?.includes('authentication')
