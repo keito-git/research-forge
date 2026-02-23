@@ -86,10 +86,22 @@ body {
   position: relative;
 }
 .leaf-accent::after {
-  content: '🌿';
+  content: '\1F33F';
   position: absolute;
   right: -8px;
   top: -8px;
   font-size: 14px;
   opacity: 0.5;
+}
+
+/* Streaming text cursor */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+.streaming-cursor::after {
+  content: '\25AE';
+  animation: blink 1s step-end infinite;
+  margin-left: 2px;
+  color: var(--earth-leaf);
 }
