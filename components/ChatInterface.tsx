@@ -424,6 +424,40 @@ function CopyButton({ text }: { text: string }) {
   );
 }
 
+// Extract partial info from streaming tool JSON
+function parseStreamingToolProgress(content: string): {
+  title?: string;
+  description?: string;
+  stage: 'starting' | 'html' | 'explanation' | 'finishing';
+  contentLength: number;
+} {
+  const titleMatch = content.match(/"title"\s*:\s*"([^"]*?)"/);
+  const descMatch = content.match(/"description"\s*:\s*"([^"]*?)"/);
+
+  let stage: 'starting' | 'html' | 'explanation' | 'finishing' = 'starting';
+  if (content.includes('"academic_advice"')) {
+    stage = 'finishing';
+  } else if (content.includes('"explanation"')) {
+    stage = 'explanation';
+  } else if (content.includes('"html"')) {
+    stage = 'html';
+  }
+
+  return {
+    title: titleMatch?.[1],
+    description: descMatch?.[1],
+    stage,
+    contentLength: content.length,
+  };
+}
+
+const STAGE_LABELS: Record<string, string> = {
+  starting: 'ツール情報を準備中...',
+  html: 'HTMLコードを生成中...',
+  explanation: '説明を作成中...',
+  finishing: '仕上げ中...',
+};
+
 // Memoized message bubble to avoid re-rendering all messages on input change
 const ChatBubble = memo(function ChatBubble({
   message,
@@ -432,6 +466,7 @@ const ChatBubble = memo(function ChatBubble({
   lastFailedInput,
   onRetry,
   onOpenInNewTab,
+  onStop,
 }: {
   message: Message;
   isLastAssistant: boolean;
@@ -439,6 +474,7 @@ const ChatBubble = memo(function ChatBubble({
   lastFailedInput: string | null;
   onRetry: () => void;
   onOpenInNewTab: () => void;
+  onStop: () => void;
 }) {
   const content = message.content;
   const showStreaming = isStreaming && isLastAssistant;
@@ -448,12 +484,44 @@ const ChatBubble = memo(function ChatBubble({
       return <p className="text-[15px]">{content}</p>;
     }
 
-    // While streaming, check if it looks like a tool generation in progress
+    // While streaming, show progress for tool generation
     if (showStreaming && content.includes('"tool_generation"')) {
+      const progress = parseStreamingToolProgress(content);
       return (
-        <div className="flex items-center gap-2 px-3 py-2 bg-forge-50 rounded-xl border border-forge-200">
-          <Sparkles className="w-4 h-4 text-forge-600 animate-pulse-soft" />
-          <span className="text-sm text-forge-700">ツールを生成中...</span>
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 px-3 py-2 bg-forge-50 rounded-xl border border-forge-200">
+            <Sparkles className="w-4 h-4 text-forge-600 animate-pulse-soft" />
+            <div className="flex-1 min-w-0">
+              {progress.title ? (
+                <span className="text-sm font-medium text-forge-800">「{progress.title}」を生成中</span>
+              ) : (
+                <span className="text-sm text-forge-700">ツールを生成中...</span>
+              )}
+              {progress.description && <p className="text-xs text-forge-600 mt-0.5 truncate">{progress.description}</p>}
+            </div>
+          </div>
+          {/* Progress steps */}
+          <div className="flex items-center gap-1.5 px-1">
+            {(['starting', 'html', 'explanation', 'finishing'] as const).map((s, i) => {
+              const stages = ['starting', 'html', 'explanation', 'finishing'];
+              const currentIdx = stages.indexOf(progress.stage);
+              const isDone = i < currentIdx;
+              const isCurrent = i === currentIdx;
+              return (
+                <div key={s} className="flex items-center gap-1.5 flex-1">
+                  <div
+                    className={`h-1.5 flex-1 rounded-full transition-all duration-500 ${
+                      isDone ? 'bg-forge-500' : isCurrent ? 'bg-forge-400 animate-pulse' : 'bg-sand-200'
+                    }`}
+                  />
+                </div>
+              );
+            })}
+          </div>
+          <p className="text-xs text-ink-400 px-1">{STAGE_LABELS[progress.stage]}</p>
+          <Button variant="outline" size="sm" onClick={onStop} className="gap-1.5 w-full">
+            生成を中止
+          </Button>
         </div>
       );
     }
@@ -504,7 +572,7 @@ const ChatBubble = memo(function ChatBubble({
         </ReactMarkdown>
       </div>
     );
-  }, [content, showStreaming, lastFailedInput, message.role, onRetry, onOpenInNewTab]);
+  }, [content, showStreaming, lastFailedInput, message.role, onRetry, onOpenInNewTab, onStop]);
 
   return (
     <div className="message-enter">
@@ -565,6 +633,7 @@ export default function ChatInterface({
     error: chatError,
     setMessages,
     append,
+    stop,
   } = useChat({
     api: '/api/chat',
     body: { profile, apiKey, model },
@@ -1074,6 +1143,7 @@ export default function ChatInterface({
                       lastFailedInput={lastFailedInput}
                       onRetry={handleRetry}
                       onOpenInNewTab={handleOpenInNewTab}
+                      onStop={stop}
                     />
                   ))}
                   {isLoading && messages.length > 0 && messages[messages.length - 1].role === 'user' && (
