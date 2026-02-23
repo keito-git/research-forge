@@ -61,9 +61,6 @@ interface SavedTool {
   author?: string;
 }
 
-const TOOLS_KEY = 'research-forge-saved-tools';
-const COMMUNITY_KEY = 'research-forge-community';
-
 function tryParseToolGeneration(text: string): GeneratedTool | null {
   // Strategy 1: Try ```json block
   try {
