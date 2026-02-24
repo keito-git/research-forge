@@ -2,11 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getToolHtmlForDownload, wrapHtmlWithApiKeyInjector } from '@/lib/tool-html';
-import type { GeneratedTool, SavedTool } from '@/types';
+import type { GeneratedTool, PreviewTab, SavedTool } from '@/types';
 
 export function useToolPreview(apiKey: string) {
   const [tool, setTool] = useState<GeneratedTool | null>(null);
-  const [previewTab, setPreviewTab] = useState<'preview' | 'about' | 'customize' | 'code'>('preview');
+  const [previewTab, setPreviewTab] = useState<PreviewTab>('preview');
   const [customParams, setCustomParams] = useState<Record<string, string>>({});
   const [toolSaved, setToolSaved] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);

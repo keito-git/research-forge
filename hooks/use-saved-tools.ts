@@ -47,7 +47,7 @@ export function useSavedTools(storageReady: boolean, tool: GeneratedTool | null,
     };
     setCommunityTools((prev) => {
       const updated = [newTool, ...prev];
-      putAll('communityTools', updated).catch(() => {});
+      putAll('communityTools', updated).catch((err) => console.warn('Failed to save community tools:', err));
       return updated;
     });
     toast({ title: 'ギャラリーに追加しました' });
@@ -63,7 +63,7 @@ export function useSavedTools(storageReady: boolean, tool: GeneratedTool | null,
     e.stopPropagation();
     setCommunityTools((prev) => {
       const updated = prev.filter((t) => t.id !== toolId);
-      putAll('communityTools', updated).catch(() => {});
+      putAll('communityTools', updated).catch((err) => console.warn('Failed to update community tools:', err));
       return updated;
     });
     toast({ title: 'ギャラリーから削除しました' });

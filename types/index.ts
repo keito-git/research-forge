@@ -53,6 +53,8 @@ export interface ChatInterfaceProps {
   onResetProfile: () => void;
 }
 
+export type PreviewTab = 'preview' | 'about' | 'customize' | 'code';
+
 export interface StreamingToolProgress {
   title?: string;
   description?: string;

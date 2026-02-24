@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 export interface Toast {
   id: string;
@@ -26,13 +26,13 @@ export function useToast() {
     }, 4000);
   }, []);
 
-  // Register listener
-  useState(() => {
+  // Register/unregister listener on mount/unmount
+  useEffect(() => {
     toastListeners.push(addToast);
     return () => {
       toastListeners = toastListeners.filter((fn) => fn !== addToast);
     };
-  });
+  }, [addToast]);
 
   const dismiss = useCallback((id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));

@@ -87,7 +87,7 @@ export function useConversations({
         createdAt: conversations.find((c) => c.id === activeConversationId)?.createdAt ?? new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
-      put('chatHistory', conv).catch(() => {});
+      put('chatHistory', conv).catch((err) => console.warn('Failed to save conversation:', err));
       setConversations((prev) => {
         const existing = prev.findIndex((c) => c.id === activeConversationId);
         if (existing >= 0) {
@@ -122,7 +122,7 @@ export function useConversations({
   const handleDeleteConversation = useCallback(
     (convId: string, e: React.MouseEvent) => {
       e.stopPropagation();
-      remove('chatHistory', convId).catch(() => {});
+      remove('chatHistory', convId).catch((err) => console.warn('Failed to delete conversation:', err));
       setConversations((prev) => prev.filter((c) => c.id !== convId));
       if (activeConversationId === convId) {
         setMessages([]);
@@ -135,7 +135,7 @@ export function useConversations({
 
   const handleClearChat = useCallback(() => {
     if (activeConversationId) {
-      remove('chatHistory', activeConversationId).catch(() => {});
+      remove('chatHistory', activeConversationId).catch((err) => console.warn('Failed to clear conversation:', err));
       setConversations((prev) => prev.filter((c) => c.id !== activeConversationId));
     }
     setMessages([]);
