@@ -1,6 +1,6 @@
 'use client';
 
-import { Bookmark, BookOpen, MessageSquarePlus, Plus, Settings, Sparkles, Trash2 } from 'lucide-react';
+import { Plus, Settings, Trash2 } from 'lucide-react';
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
