@@ -1,6 +1,21 @@
 import type { GeneratedTool, StreamingToolProgress } from '@/types';
 
+// LRU-1 caches: store last input→result to avoid re-parsing identical content
+let _parseCache: { input: string; result: GeneratedTool | null } | null = null;
+let _progressCache: { input: string; length: number; result: StreamingToolProgress } | null = null;
+
 export function tryParseToolGeneration(text: string): GeneratedTool | null {
+  // LRU-1: return cached result if input is identical
+  if (_parseCache && _parseCache.input === text) {
+    return _parseCache.result;
+  }
+
+  const result = _tryParseToolGenerationImpl(text);
+  _parseCache = { input: text, result };
+  return result;
+}
+
+function _tryParseToolGenerationImpl(text: string): GeneratedTool | null {
   // Strategy 1: Try ```json block
   try {
     const jsonMatch = text.match(/```json\s*([\s\S]*?)\s*```/);
@@ -103,6 +118,21 @@ export function tryParseToolGeneration(text: string): GeneratedTool | null {
 }
 
 export function parseStreamingToolProgress(content: string): StreamingToolProgress {
+  // LRU-1: return cached result if input is identical
+  if (_progressCache && _progressCache.input === content) {
+    return _progressCache.result;
+  }
+
+  // Fast path for html stage: if only contentLength changed by < 200 chars, reuse previous parse
+  if (_progressCache && content.startsWith(_progressCache.input.slice(0, 100))) {
+    const lengthDelta = content.length - _progressCache.length;
+    if (lengthDelta > 0 && lengthDelta < 200 && _progressCache.result.stage === 'html') {
+      const result = { ..._progressCache.result, contentLength: content.length };
+      _progressCache = { input: content, length: content.length, result };
+      return result;
+    }
+  }
+
   const titleMatch = content.match(/"title"\s*:\s*"([^"]*?)"/);
   const descMatch = content.match(/"description"\s*:\s*"([^"]*?)"/);
 
@@ -115,10 +145,12 @@ export function parseStreamingToolProgress(content: string): StreamingToolProgre
     stage = 'html';
   }
 
-  return {
+  const result: StreamingToolProgress = {
     title: titleMatch?.[1],
     description: descMatch?.[1],
     stage,
     contentLength: content.length,
   };
+  _progressCache = { input: content, length: content.length, result };
+  return result;
 }

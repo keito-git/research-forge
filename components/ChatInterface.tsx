@@ -81,14 +81,22 @@ export default function ChatInterface({
   const saveConversationRef = useRef(conversations.saveConversation);
   saveConversationRef.current = conversations.saveConversation;
 
-  // Debounced save on message change
+  // Debounced save on message change — skip while streaming to avoid excessive IndexedDB writes
+  const wasLoadingRef = useRef(false);
   useEffect(() => {
     if (!storageReady || chatSession.messages.length === 0 || !activeConversationId) return;
+    // Skip saving while streaming; save once streaming finishes
+    if (chatSession.isLoading) {
+      wasLoadingRef.current = true;
+      return;
+    }
+    const delay = wasLoadingRef.current ? 300 : 500;
+    wasLoadingRef.current = false;
     const timeout = setTimeout(() => {
       saveConversationRef.current(chatSession.messages);
-    }, 500);
+    }, delay);
     return () => clearTimeout(timeout);
-  }, [chatSession.messages, storageReady, activeConversationId]);
+  }, [chatSession.messages, storageReady, activeConversationId, chatSession.isLoading]);
 
   // Bridge: save + publish set toolSaved
   const handleSaveTool = useCallback(() => {

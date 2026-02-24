@@ -1,8 +1,30 @@
 import type { Metadata } from 'next';
+import { JetBrains_Mono, Noto_Sans_JP, Noto_Serif_JP } from 'next/font/google';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import './globals.css';
+
+const notoSansJP = Noto_Sans_JP({
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700'],
+  variable: '--font-noto-sans',
+  display: 'swap',
+});
+
+const notoSerifJP = Noto_Serif_JP({
+  subsets: ['latin'],
+  weight: ['400', '600', '700'],
+  variable: '--font-noto-serif',
+  display: 'swap',
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ['latin'],
+  weight: ['400', '500'],
+  variable: '--font-jetbrains-mono',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: 'Research Forge — 人文・社会学研究者のためのAIツール生成',
@@ -12,8 +34,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ja">
-      <body className="grain-overlay">
+    <html lang="ja" className={`${notoSansJP.variable} ${notoSerifJP.variable} ${jetbrainsMono.variable}`}>
+      <body>
         <ErrorBoundary>
           <TooltipProvider>{children}</TooltipProvider>
         </ErrorBoundary>
