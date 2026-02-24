@@ -133,7 +133,7 @@ export default function Onboarding({ onComplete, initialApiKey = '' }: Onboardin
                 <button
                   key={f.id}
                   onClick={() => setField(f.id)}
-                  className={`flex items-center gap-3 px-4 py-3.5 rounded-xl border-2 transition-all duration-200 text-left ${field === f.id ? 'border-forge-500 bg-forge-50 shadow-sm' : 'border-sand-200 bg-white hover:border-forge-300 hover:bg-forge-50/50'}`}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg border transition-all duration-200 text-left ${field === f.id ? 'border-forge-500 bg-forge-50' : 'border-sand-200 bg-white hover:border-forge-300 hover:bg-forge-50/30'}`}
                 >
                   <span className="text-xl">{f.icon}</span>
                   <span className="font-medium text-ink-800 text-sm">{f.label}</span>

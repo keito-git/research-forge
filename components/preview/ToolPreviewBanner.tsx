@@ -14,19 +14,19 @@ export function ToolPreviewBanner({
   onDownload: () => void;
 }) {
   return (
-    <div className="px-4 py-3 bg-forge-600 text-white flex items-center justify-between shrink-0">
+    <div className="px-4 py-2.5 border-b border-sand-200/80 bg-white flex items-center justify-between shrink-0">
       <div>
-        <h3 className="font-medium text-sm">{title}</h3>
-        <p className="text-xs text-forge-200">右はプレビューです。実際に使うには新しいタブで開いてください</p>
+        <h3 className="font-display font-bold text-sm text-ink-900">{title}</h3>
+        <p className="text-[11px] text-ink-400">新しいタブで開くと全機能が使えます</p>
       </div>
-      <div className="flex items-center gap-2">
-        <Button variant="secondary" onClick={onOpenInNewTab} className="gap-2 text-forge-700">
-          <ExternalLink className="w-4 h-4" />
+      <div className="flex items-center gap-1.5">
+        <Button onClick={onOpenInNewTab} size="sm" className="gap-1.5">
+          <ExternalLink className="w-3.5 h-3.5" />
           ツールを使う
         </Button>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button size="icon" onClick={onDownload} className="bg-forge-500 hover:bg-forge-400">
+            <Button variant="ghost" size="icon" onClick={onDownload} className="w-8 h-8">
               <Download className="w-3.5 h-3.5" />
             </Button>
           </TooltipTrigger>

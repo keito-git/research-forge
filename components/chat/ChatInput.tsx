@@ -25,7 +25,7 @@ export function ChatInput({
   );
 
   return (
-    <form onSubmit={onSend} className="px-4 py-3 border-t border-sand-200 bg-white shrink-0">
+    <form onSubmit={onSend} className="px-4 py-3 border-t border-sand-200/70 bg-white shrink-0">
       <div className="flex items-end gap-2">
         <Textarea
           value={input}
@@ -34,18 +34,23 @@ export function ChatInput({
           placeholder="どのようなツールを作りましょうか？"
           rows={2}
           className="flex-1 resize-none"
-          style={{ minHeight: '60px', maxHeight: '150px' }}
+          style={{ minHeight: '56px', maxHeight: '150px' }}
         />
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button type="submit" disabled={!input.trim() || isLoading} size="icon" className="w-11 h-11 flex-shrink-0">
+            <Button
+              type="submit"
+              disabled={!input.trim() || isLoading}
+              size="icon"
+              className="w-10 h-10 flex-shrink-0 rounded-lg"
+            >
               <Send className="w-4 h-4" />
             </Button>
           </TooltipTrigger>
           <TooltipContent>送信 (Ctrl+Enter)</TooltipContent>
         </Tooltip>
       </div>
-      <p className="text-[11px] text-ink-300 mt-1.5 text-right">Ctrl+Enter ({'\u2318'}+Enter) で送信 ・ Enterで改行</p>
+      <p className="text-[10px] text-ink-300 mt-1 text-right">Ctrl+Enter で送信</p>
     </form>
   );
 }

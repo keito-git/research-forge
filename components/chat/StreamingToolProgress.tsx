@@ -10,7 +10,7 @@ const STAGES = ['starting', 'html', 'explanation', 'finishing'] as const;
 export function StreamingToolProgress({ progress, onStop }: { progress: ProgressData; onStop: () => void }) {
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-2 px-3 py-2 bg-forge-50 rounded-xl border border-forge-200">
+      <div className="flex items-center gap-2 px-3 py-2 bg-forge-50 rounded-lg border border-forge-200">
         <Sparkles className="w-4 h-4 text-forge-600 animate-pulse-soft" />
         <div className="flex-1 min-w-0">
           {progress.title ? (

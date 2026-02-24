@@ -1,6 +1,6 @@
 'use client';
 
-import { Bookmark, BookOpen, MessageSquarePlus, Settings, Sparkles } from 'lucide-react';
+import { Bookmark, BookOpen, MessageSquarePlus, Plus, Settings, Sparkles, Trash2 } from 'lucide-react';
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -12,6 +12,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useChatSession } from '@/hooks/use-chat-session';
 import { useConversations } from '@/hooks/use-conversations';
 import { useSavedTools } from '@/hooks/use-saved-tools';
@@ -127,35 +128,49 @@ export default function ChatInterface({
   return (
     <div className="h-screen flex flex-col bg-sand-50">
       {/* Header */}
-      <header className="flex items-center justify-between px-5 py-3 border-b border-sand-200 bg-sand-50/90 backdrop-blur-sm">
+      <header className="flex items-center justify-between px-5 py-2.5 border-b border-sand-200/80 bg-sand-50">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-forge-600 flex items-center justify-center shadow-sm">
-            <span className="text-white text-base">{'\uD83C\uDF3F'}</span>
+          <div className="w-8 h-8 rounded-lg bg-forge-600 flex items-center justify-center">
+            <span className="text-white text-sm">{'\uD83C\uDF3F'}</span>
           </div>
           <div>
-            <h1 className="font-display text-lg font-bold text-ink-900 leading-tight">Research Forge</h1>
-            <p className="text-xs text-ink-400">
-              {fieldInfo?.icon} {fieldLabel} モード
+            <h1 className="font-display text-base font-bold text-ink-900 leading-tight">Research Forge</h1>
+            <p className="text-[11px] text-ink-400">
+              {fieldInfo?.icon} {fieldLabel}
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-1">
-          <Button variant="ghost" size="sm" onClick={conversations.handleNewConversation} className="gap-1.5">
-            <MessageSquarePlus className="w-3.5 h-3.5" />
-            新しい会話
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setShowClearConfirm(true)}
-            disabled={chatSession.messages.length === 0}
-          >
-            チャットを削除
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => setShowSettings(true)} className="gap-1.5">
-            <Settings className="w-3.5 h-3.5" />
-            設定
-          </Button>
+        <div className="flex items-center gap-0.5">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" onClick={conversations.handleNewConversation} className="w-8 h-8">
+                <Plus className="w-4 h-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>新しい会話</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowClearConfirm(true)}
+                disabled={chatSession.messages.length === 0}
+                className="w-8 h-8"
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>チャットを削除</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" onClick={() => setShowSettings(true)} className="w-8 h-8">
+                <Settings className="w-4 h-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>設定</TooltipContent>
+          </Tooltip>
         </div>
       </header>
 
@@ -208,32 +223,30 @@ export default function ChatInterface({
 
       {/* Main */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Left Panel */}
+        {/* Left Panel — the workbench */}
         <div
-          className={`w-full md:w-[42%] flex-col border-r border-sand-200 bg-white ${mobileView === 'chat' ? 'flex' : 'hidden md:flex'}`}
+          className={`w-full md:w-[42%] flex-col border-r border-sand-300/60 bg-white ${mobileView === 'chat' ? 'flex' : 'hidden md:flex'}`}
         >
           <Tabs
             value={sidePanel}
             onValueChange={(v) => setSidePanel(v as typeof sidePanel)}
             className="flex flex-col flex-1 overflow-hidden"
           >
-            <TabsList className="border-b border-sand-200 rounded-none bg-transparent shrink-0">
-              <TabsTrigger value="chat">
-                <Sparkles className="w-3.5 h-3.5" />
-                チャット
-              </TabsTrigger>
+            <TabsList className="border-b border-sand-200/70 rounded-none bg-transparent shrink-0 px-3">
+              <TabsTrigger value="chat">チャット</TabsTrigger>
               <TabsTrigger value="history">
-                <MessageSquarePlus className="w-3.5 h-3.5" />
-                履歴({conversations.conversations.length})
+                履歴
+                {conversations.conversations.length > 0 && (
+                  <span className="text-[10px] text-ink-400 tabular-nums">{conversations.conversations.length}</span>
+                )}
               </TabsTrigger>
               <TabsTrigger value="saved">
-                <Bookmark className="w-3.5 h-3.5" />
-                保存済み({savedTools.savedTools.length})
+                保存済み
+                {savedTools.savedTools.length > 0 && (
+                  <span className="text-[10px] text-ink-400 tabular-nums">{savedTools.savedTools.length}</span>
+                )}
               </TabsTrigger>
-              <TabsTrigger value="gallery">
-                <BookOpen className="w-3.5 h-3.5" />
-                ギャラリー
-              </TabsTrigger>
+              <TabsTrigger value="gallery">ギャラリー</TabsTrigger>
             </TabsList>
 
             <TabsContent value="chat" className="flex flex-col flex-1 overflow-hidden">
@@ -291,7 +304,7 @@ export default function ChatInterface({
           iframeSrcDoc={preview.iframeSrcDoc}
           iframeRef={preview.iframeRef}
           mobileView={mobileView}
-          onPreviewTabChange={(v) => preview.setPreviewTab(v as 'preview' | 'about' | 'customize' | 'code')}
+          onPreviewTabChange={preview.setPreviewTab}
           onSaveTool={handleSaveTool}
           onPublishTool={handlePublishTool}
           onOpenInNewTab={preview.handleOpenInNewTab}

@@ -46,7 +46,7 @@ export const ChatBubble = memo(function ChatBubble({
     if (toolParsed) {
       return (
         <div className="space-y-3">
-          <div className="flex items-center gap-2 px-3 py-2 bg-forge-50 rounded-xl border border-forge-200">
+          <div className="flex items-center gap-2 px-3 py-2 bg-forge-50 rounded-lg border border-forge-200">
             <Sparkles className="w-4 h-4 text-forge-600" />
             <span className="text-sm font-medium text-forge-800">
               {'\u300C'}
@@ -57,7 +57,7 @@ export const ChatBubble = memo(function ChatBubble({
           {toolParsed.academic_advice?.map((advice, i) => (
             <div
               key={i}
-              className="text-sm text-forge-700 bg-forge-50/50 px-3 py-2 rounded-xl border-l-2 border-forge-400"
+              className="text-sm text-forge-700 bg-forge-50/50 px-3 py-2 rounded-md border-l-2 border-forge-300"
             >
               {advice}
             </div>
@@ -95,20 +95,20 @@ export const ChatBubble = memo(function ChatBubble({
   }, [content, showStreaming, lastFailedInput, message.role, onRetry, onOpenInNewTab, onStop]);
 
   return (
-    <div className="message-enter">
-      <div className={`group flex gap-3 ${message.role === 'user' ? 'flex-row-reverse' : ''}`}>
+    <div className="message-enter group">
+      <div className={`flex items-start gap-2.5 ${message.role === 'user' ? 'justify-end' : ''}`}>
         {message.role === 'assistant' && (
-          <div className="w-8 h-8 rounded-full bg-forge-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-            <Sparkles className="w-4 h-4 text-forge-600" />
+          <div className="w-6 h-6 rounded-md bg-forge-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+            <Sparkles className="w-3 h-3 text-forge-600" />
           </div>
         )}
         <div
-          className={`max-w-[85%] rounded-2xl px-4 py-3 ${message.role === 'user' ? 'bg-forge-600 text-white rounded-tr-md' : 'bg-sand-50 text-ink-700 rounded-tl-md'}`}
+          className={`min-w-0 ${message.role === 'user' ? 'max-w-[80%] bg-sand-100 rounded-lg px-4 py-2.5 text-ink-800' : 'flex-1 text-ink-700'}`}
         >
           {renderedContent}
         </div>
         {message.role === 'assistant' && !showStreaming && content && !content.includes('"tool_generation"') && (
-          <div className="flex items-start mt-1">
+          <div className="flex items-start mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
             <CopyButton text={content} />
           </div>
         )}
