@@ -2,7 +2,7 @@
 
 import type { Message } from 'ai/react';
 import { ExternalLink, RefreshCw, Sparkles } from 'lucide-react';
-import { memo, useMemo } from 'react';
+import { memo, useMemo, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Button } from '@/components/ui/button';
@@ -31,6 +31,14 @@ export const ChatBubble = memo(function ChatBubble({
   const content = message.content;
   const showStreaming = isStreaming && isLastAssistant;
 
+  // Hold callbacks in refs so they don't bust the useMemo cache
+  const onRetryRef = useRef(onRetry);
+  onRetryRef.current = onRetry;
+  const onOpenInNewTabRef = useRef(onOpenInNewTab);
+  onOpenInNewTabRef.current = onOpenInNewTab;
+  const onStopRef = useRef(onStop);
+  onStopRef.current = onStop;
+
   const renderedContent = useMemo(() => {
     if (message.role === 'user') {
       return <p className="text-[15px]">{content}</p>;
@@ -39,10 +47,11 @@ export const ChatBubble = memo(function ChatBubble({
     // While streaming, show progress for tool generation
     if (showStreaming && content.includes('"tool_generation"')) {
       const progress = parseStreamingToolProgress(content);
-      return <StreamingToolProgress progress={progress} onStop={onStop} />;
+      return <StreamingToolProgress progress={progress} onStop={() => onStopRef.current()} />;
     }
 
-    const toolParsed = tryParseToolGeneration(content);
+    // Guard: only attempt tool parse if content looks like a tool generation
+    const toolParsed = content.includes('"tool_generation"') ? tryParseToolGeneration(content) : null;
     if (toolParsed) {
       return (
         <div className="space-y-3">
@@ -62,7 +71,7 @@ export const ChatBubble = memo(function ChatBubble({
               {advice}
             </div>
           ))}
-          <Button onClick={onOpenInNewTab} className="w-full gap-2">
+          <Button onClick={() => onOpenInNewTabRef.current()} className="w-full gap-2">
             <ExternalLink className="w-4 h-4" />
             このツールを使う（新しいタブで開く）
           </Button>
@@ -77,7 +86,7 @@ export const ChatBubble = memo(function ChatBubble({
       return (
         <div className="space-y-2">
           <div className="whitespace-pre-wrap leading-relaxed text-[15px]">{content}</div>
-          <Button variant="outline" size="sm" onClick={onRetry} className="gap-1.5">
+          <Button variant="outline" size="sm" onClick={() => onRetryRef.current()} className="gap-1.5">
             <RefreshCw className="w-3.5 h-3.5" />
             再送信
           </Button>
@@ -92,7 +101,7 @@ export const ChatBubble = memo(function ChatBubble({
         </ReactMarkdown>
       </div>
     );
-  }, [content, showStreaming, lastFailedInput, message.role, onRetry, onOpenInNewTab, onStop]);
+  }, [content, showStreaming, lastFailedInput, message.role]);
 
   return (
     <div className="message-enter group">

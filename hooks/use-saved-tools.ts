@@ -1,21 +1,13 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { toast } from '@/hooks/use-toast';
-import { putAll } from '@/lib/storage';
+import { put, putAll, remove } from '@/lib/storage';
 import type { GeneratedTool, SavedTool } from '@/types';
 
 export function useSavedTools(storageReady: boolean, tool: GeneratedTool | null, fieldLabel: string) {
   const [savedTools, setSavedTools] = useState<SavedTool[]>([]);
   const [communityTools, setCommunityTools] = useState<SavedTool[]>([]);
-
-  // Save tools to IndexedDB when they change
-  useEffect(() => {
-    if (!storageReady) return;
-    putAll('savedTools', savedTools).catch(() => {
-      toast({ title: '保存に失敗しました', variant: 'destructive' });
-    });
-  }, [savedTools, storageReady]);
 
   const handleSaveTool = useCallback((): boolean => {
     if (!tool) return false;
@@ -29,6 +21,9 @@ export function useSavedTools(storageReady: boolean, tool: GeneratedTool | null,
       createdAt: new Date().toISOString().split('T')[0],
     };
     setSavedTools((prev) => [newTool, ...prev]);
+    put('savedTools', newTool).catch(() => {
+      toast({ title: '保存に失敗しました', variant: 'destructive' });
+    });
     toast({ title: 'ツールを保存しました' });
     return true;
   }, [tool, fieldLabel]);
@@ -56,6 +51,7 @@ export function useSavedTools(storageReady: boolean, tool: GeneratedTool | null,
   const handleDeleteSavedTool = useCallback((toolId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     setSavedTools((prev) => prev.filter((t) => t.id !== toolId));
+    remove('savedTools', toolId).catch((err) => console.warn('Failed to delete saved tool:', err));
     toast({ title: 'ツールを削除しました' });
   }, []);
 

@@ -2,7 +2,6 @@
 
 import type { Message } from 'ai/react';
 import { useCallback, useEffect, useState } from 'react';
-import { DEFAULT_COMMUNITY_TOOLS } from '@/lib/constants';
 import { getAll, migrateFromLocalStorage, put, remove } from '@/lib/storage';
 import type { Conversation, GeneratedTool, SavedTool } from '@/types';
 
@@ -40,7 +39,12 @@ export function useConversations({
           getAll<Conversation>('chatHistory'),
         ]);
         setSavedTools(savedData);
-        setCommunityTools(communityData.length > 0 ? communityData : DEFAULT_COMMUNITY_TOOLS);
+        if (communityData.length > 0) {
+          setCommunityTools(communityData);
+        } else {
+          const { DEFAULT_COMMUNITY_TOOLS } = await import('@/lib/default-community-tools');
+          setCommunityTools(DEFAULT_COMMUNITY_TOOLS);
+        }
 
         // Migrate old single-conversation format
         const oldFormat = chatData.find((c) => c.id === 'current' && !c.title);
@@ -69,7 +73,9 @@ export function useConversations({
           }
         }
       } catch {
-        setCommunityTools(DEFAULT_COMMUNITY_TOOLS);
+        import('@/lib/default-community-tools').then(({ DEFAULT_COMMUNITY_TOOLS }) => {
+          setCommunityTools(DEFAULT_COMMUNITY_TOOLS);
+        });
       }
       setStorageReady(true);
     })();
