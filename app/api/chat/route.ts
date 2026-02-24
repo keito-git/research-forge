@@ -5,10 +5,33 @@ import { buildSystemPrompt, type UserProfile } from '@/lib/prompts';
 export const maxDuration = 120;
 
 export async function POST(req: Request) {
-  const { messages, profile, apiKey, model } = await req.json();
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return Response.json({ error: '不正なリクエスト形式です。' }, { status: 400 });
+  }
 
-  const key = apiKey || process.env.ANTHROPIC_API_KEY;
-  const selectedModel = model || 'claude-sonnet-4-20250514';
+  if (typeof body !== 'object' || body === null) {
+    return Response.json({ error: '不正なリクエスト形式です。' }, { status: 400 });
+  }
+
+  const { messages, profile, apiKey, model } = body as Record<string, unknown>;
+
+  if (!Array.isArray(messages) || messages.length === 0) {
+    return Response.json({ error: 'メッセージが空です。' }, { status: 400 });
+  }
+
+  if (typeof apiKey !== 'undefined' && typeof apiKey !== 'string') {
+    return Response.json({ error: 'APIキーの形式が不正です。' }, { status: 400 });
+  }
+
+  if (typeof model !== 'undefined' && typeof model !== 'string') {
+    return Response.json({ error: 'モデル指定の形式が不正です。' }, { status: 400 });
+  }
+
+  const key = (apiKey as string) || process.env.ANTHROPIC_API_KEY;
+  const selectedModel = (model as string) || 'claude-sonnet-4-20250514';
 
   if (!key) {
     return Response.json(
@@ -18,7 +41,7 @@ export async function POST(req: Request) {
   }
 
   const anthropic = createAnthropic({ apiKey: key });
-  const userProfile: UserProfile = profile ?? { field: 'other' };
+  const userProfile: UserProfile = (profile as UserProfile) ?? { field: 'other' };
   const systemPrompt = buildSystemPrompt(userProfile, key);
 
   try {

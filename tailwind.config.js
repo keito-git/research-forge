@@ -73,9 +73,6 @@ module.exports = {
         },
         pulseSoft: { '0%, 100%': { opacity: '1' }, '50%': { opacity: '0.5' } },
       },
-      borderRadius: {
-        organic: '12px 20px 12px 20px',
-      },
     },
   },
   plugins: [require('tailwindcss-animate')],
